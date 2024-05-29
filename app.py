@@ -48,8 +48,8 @@ if 'page' not in st.session_state:
 # Main option menu for navigation
 page = option_menu(
     menu_title=None,
-    options=["Dashboard", "Filtered Data", "Globe"],
-    icons=["bar-chart", "filter", "globe"],
+    options=["Dashboard", "Filtered Data", "Globe", "Time Series Analysis"],
+    icons=["bar-chart", "filter", "globe", "line-chart"],
     menu_icon="cast",
     default_index=0,
     orientation="horizontal",
@@ -119,7 +119,7 @@ elif page == 'Filtered Data':
                 state_filtered_data = country_filtered_data[country_filtered_data['Country/Region'] == selected_country]
 
             st.subheader("Filtered Data by Selected Countries and States")
-            st.dataframe(state_filtered_data, width= 1500)
+            st.dataframe(state_filtered_data, width=1500)
 
             # Interactive Line Chart for the selected country and states
             st.subheader("Confirmed Cases Over Time")
@@ -150,7 +150,7 @@ elif page == 'Filtered Data':
         else:
             # Plot line chart for the entire country without including states
             st.subheader("Confirmed Cases Over Time for Selected Country(s)")
-            country_filtered_data_grouped = country_filtered_data.groupby('ObservationDate').sum().reset_index()
+            country_filtered_data_grouped = country_filtered_data.groupby('ObservationDate').sum().            country_filtered_data_grouped = country_filtered_data.groupby('ObservationDate').sum().reset_index()
             fig_line_countries = px.line(country_filtered_data_grouped, x='ObservationDate', y='Confirmed', 
                                          title='Confirmed Cases Over Time for Selected Country(s)', 
                                          labels={'ObservationDate': 'Date', 'Confirmed': 'Confirmed Cases'},
@@ -199,3 +199,71 @@ elif page == 'Globe':
     fig_heatmap.update_layout(height=800, margin={"r":0,"t":0,"l":0,"b":0})
 
     st.plotly_chart(fig_heatmap)
+
+elif page == 'Time Series Analysis':
+    st.session_state.page = 'Time Series Analysis'
+    st.title("Time Series Analysis of COVID-19 Cases")
+
+    # Group data by date
+    date_grouped = df.groupby('ObservationDate').agg({
+        'Confirmed': 'sum',
+        'Deaths': 'sum',
+        'Recovered': 'sum'
+    }).reset_index()
+
+    # Calculate daily new cases
+    date_grouped['NewConfirmed'] = date_grouped['Confirmed'].diff().fillna(0)
+    date_grouped['NewDeaths'] = date_grouped['Deaths'].diff().fillna(0)
+    date_grouped['NewRecovered'] = date_grouped['Recovered'].diff().fillna(0)
+
+    # Plot daily new confirmed cases
+    st.subheader("Daily New Confirmed Cases")
+    fig_new_confirmed = px.line(date_grouped, x='ObservationDate', y='NewConfirmed', 
+                                title='Daily New Confirmed Cases Over Time', 
+                                labels={'ObservationDate': 'Date', 'NewConfirmed': 'Daily New Confirmed Cases'},
+                                markers=True)
+    st.plotly_chart(fig_new_confirmed)
+
+    # Plot daily new deaths
+    st.subheader("Daily New Deaths")
+    fig_new_deaths = px.line(date_grouped, x='ObservationDate', y='NewDeaths', 
+                             title='Daily New Deaths Over Time', 
+                             labels={'ObservationDate': 'Date', 'NewDeaths': 'Daily New Deaths'},
+                             markers=True)
+    st.plotly_chart(fig_new_deaths)
+
+    # Plot daily new recoveries
+    st.subheader("Daily New Recovered Cases")
+    fig_new_recovered = px.line(date_grouped, x='ObservationDate', y='NewRecovered', 
+                                title='Daily New Recovered Cases Over Time', 
+                                labels={'ObservationDate': 'Date', 'NewRecovered': 'Daily New Recovered Cases'},
+                                markers=True)
+    st.plotly_chart(fig_new_recovered)
+
+    # Calculate growth rates
+    date_grouped['GrowthRateConfirmed'] = date_grouped['NewConfirmed'].pct_change().fillna(0)
+    date_grouped['GrowthRateDeaths'] = date_grouped['NewDeaths'].pct_change().fillna(0)
+    date_grouped['GrowthRateRecovered'] = date_grouped['NewRecovered'].pct_change().fillna(0)
+
+    # Plot growth rates
+    st.subheader("Growth Rate of Confirmed Cases")
+    fig_growth_confirmed = px.line(date_grouped, x='ObservationDate', y='GrowthRateConfirmed', 
+                                   title='Growth Rate of Confirmed Cases Over Time', 
+                                   labels={'ObservationDate': 'Date', 'GrowthRateConfirmed': 'Growth Rate of Confirmed Cases'},
+                                   markers=True)
+    st.plotly_chart(fig_growth_confirmed)
+
+    st.subheader("Growth Rate of Deaths")
+    fig_growth_deaths = px.line(date_grouped, x='ObservationDate', y='GrowthRateDeaths', 
+                                title='Growth Rate of Deaths Over Time', 
+                                labels={'ObservationDate': 'Date', 'GrowthRateDeaths': 'Growth Rate of Deaths'},
+                                markers=True)
+    st.plotly_chart(fig_growth_deaths)
+
+    st.subheader("Growth Rate of Recovered Cases")
+    fig_growth_recovered = px.line(date_grouped, x='ObservationDate', y='GrowthRateRecovered', 
+                                   title='Growth Rate of Recovered Cases Over Time', 
+                                   labels={'ObservationDate': 'Date', 'GrowthRateRecovered': 'Growth Rate of Recovered Cases'},
+                                   markers=True)
+    st.plotly_chart(fig_growth_recovered)
+
