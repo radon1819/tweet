@@ -49,7 +49,7 @@ if 'page' not in st.session_state:
 page = option_menu(
     menu_title=None,
     options=["Dashboard", "Filtered Data", "Globe", "Time Series Analysis"],
-    icons=["bar-chart", "filter", "globe", "line-chart"],
+    icons=["bar-chart", "filter", "globe", "clock"],
     menu_icon="cast",
     default_index=0,
     orientation="horizontal",
@@ -61,20 +61,31 @@ if page == 'Dashboard':
     st.session_state.page = 'Dashboard'
     st.title("COVID-19 Dashboard")
 
-    # Columns for COVID-19 Dataset and Summary Statistics
-    col1, col2 = st.columns(2)
+    # Calculate total confirmed cases, deaths, and recovered
+    total_confirmed = df['Confirmed'].sum()
+    total_deaths = df['Deaths'].sum()
+    total_recovered = df['Recovered'].sum()
 
-    with col1:
+    # Display metrics
+    col1, col2, col3 = st.columns(3)
+    col1.metric("Total Confirmed Cases", total_confirmed)
+    col2.metric("Total Deaths", total_deaths)
+    col3.metric("Total Recovered", total_recovered)
+
+    # Columns for COVID-19 Dataset and Summary Statistics
+    col4, col5 = st.columns(2)
+
+    with col4:
         st.subheader("COVID-19 Dataset")
         st.dataframe(df, height=315)
-    with col2:
+    with col5:
         st.subheader("Summary Statistics")
         st.write(df.describe())
 
     # Columns for Pie Chart and Stacked Bar Chart
-    col3, col4 = st.columns(2)
+    col6, col7 = st.columns(2)
 
-    with col3:
+    with col6:
         # Interactive Pie chart
         st.subheader("COVID-19 Cases Distribution: Deaths and Recovered")
         labels = ['Deaths', 'Recovered']
@@ -84,7 +95,7 @@ if page == 'Dashboard':
         fig_pie = px.pie(values=sizes, names=labels, title=f'Deaths vs Recovered Cases (Total Cases: {total_cases})')
         st.plotly_chart(fig_pie)
 
-    with col4:
+    with col7:
         # Stacked Bar Chart
         st.subheader("Breakdown of Cases by Country/Region")
         fig_bar = px.bar(country_data, x='Country/Region', y=['Confirmed', 'Deaths', 'Recovered'],
@@ -150,7 +161,7 @@ elif page == 'Filtered Data':
         else:
             # Plot line chart for the entire country without including states
             st.subheader("Confirmed Cases Over Time for Selected Country(s)")
-            country_filtered_data_grouped = country_filtered_data.groupby('ObservationDate').sum().            country_filtered_data_grouped = country_filtered_data.groupby('ObservationDate').sum().reset_index()
+            country_filtered_data_grouped = country_filtered_data.groupby('ObservationDate').sum().reset_index()
             fig_line_countries = px.line(country_filtered_data_grouped, x='ObservationDate', y='Confirmed', 
                                          title='Confirmed Cases Over Time for Selected Country(s)', 
                                          labels={'ObservationDate': 'Date', 'Confirmed': 'Confirmed Cases'},
@@ -266,4 +277,3 @@ elif page == 'Time Series Analysis':
                                    labels={'ObservationDate': 'Date', 'GrowthRateRecovered': 'Growth Rate of Recovered Cases'},
                                    markers=True)
     st.plotly_chart(fig_growth_recovered)
-
